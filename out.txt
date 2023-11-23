@@ -1,0 +1,20 @@
+Requests:          	049 020 034 055 023 123 154 012 000 101 188 
+Number of Tracks:	11
+Head Position:     	49
+
+Shortest Seek Time First
+Seek Sequence:    	049 055 034 023 020 012 000 101 123 154 188 
+Enter At:         	000 003 002 004 001 007 008 009 005 006 010 
+Delays:           	--- --- --- --- 003 --- --- --- 003 003 --- 
+Longest Delay: 3
+Average Delay: 3.00
+Average Seek Distance: 22.64
+
+SCAN
+Seek Sequence:    	049 055 101 123 154 188 034 023 020 012 000 
+Enter At:         	000 003 009 005 006 010 002 004 001 007 008 
+Delays:           	--- --- --- --- --- --- 004 003 007 002 002 
+Longest Delay: 7
+Average Delay: 3.60
+Average Seek Distance: 30.73
+

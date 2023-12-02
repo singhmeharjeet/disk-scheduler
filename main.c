@@ -19,8 +19,6 @@ int sstf_head = 0;
 
 void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks);
 
-int track_compare(const void *a, const void *b);
-
 int sstf_compare(const void *a, const void *b);
 
 int scan_compare_asc(const void *a, const void *b);
@@ -66,7 +64,7 @@ int main(int argc, char **argv) {
 
 	Track head_before_sort = scan_tracks[0], *head_after_sort = &scan_tracks[0];
 	qsort(scan_tracks, num_tracks, sizeof(Track), scan_compare_asc);
-	head_after_sort = bsearch(&head_before_sort, scan_tracks, num_tracks, sizeof(Track), track_compare);
+	head_after_sort = bsearch(&head_before_sort, scan_tracks, num_tracks, sizeof(Track), scan_compare_asc);
 	qsort(scan_tracks, head_after_sort - scan_tracks + 1, sizeof(Track), scan_compare_dec);
 
 	out("SCAN\n");
@@ -129,10 +127,6 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 
 	printf("Usage: ./DSSimul <track1>,<track2>,...,<trackN>\n");
 	exit(1);
-}
-
-int track_compare(const void *a, const void *b) {
-	return ((Track *) a)->value - ((Track *) b)->value;
 }
 
 int sstf_compare(const void *a, const void *b) {

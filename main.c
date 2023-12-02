@@ -1,13 +1,13 @@
+#include <stdarg.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <stdarg.h>
 
 #define FIRST_TRACK 0
-#define LAST_TRACK 199
+#define LAST_TRACK    199
 
 typedef struct Track {
 	int value;
@@ -16,19 +16,16 @@ typedef struct Track {
 
 FILE *output;
 int sstf_head = 0;
-int scan_head = 0;
-
-bool C_SCAN = false;
-int rewind_distance = 0;
 
 void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks);
+
+int track_compare(const void *a, const void *b);
 
 int sstf_compare(const void *a, const void *b);
 
 int scan_compare_asc(const void *a, const void *b);
 
 int scan_compare_dec(const void *a, const void *b);
-
 
 // HELPER FUNCTIONS
 int get_random_number(int start, int end);
@@ -56,43 +53,26 @@ int main(int argc, char **argv) {
 	Track *sstf_tracks = (Track *) malloc(sizeof(Track) * num_tracks);
 	memcpy(sstf_tracks, fcfs_tracks, sizeof(Track) * num_tracks);
 	sstf_head = sstf_tracks[0].value;
-	for (int i = 1; i < num_tracks; ++i) { // Really inefficient, but it works O(n* nlog(n))
+	for (int i = 1; i < num_tracks; ++i) {    // Really inefficient, but it works O(n* nlog(n))
 		qsort(sstf_tracks + i, num_tracks - i, sizeof(Track), sstf_compare);
 		sstf_head = sstf_tracks[i].value;
 	}
 	out("Shortest Seek Time First\n");
 	out_tracks(sstf_tracks, num_tracks);
 
-
-	C_SCAN = true;
-	//C-SCAN
+	// SCAN
 	Track *scan_tracks = (Track *) malloc(sizeof(Track) * num_tracks);
 	memcpy(scan_tracks, fcfs_tracks, sizeof(Track) * num_tracks);
-	scan_head = scan_tracks[0].value;
 
-	// Can be implemented better with a partition algorithm,
-
+	Track head_before_sort = scan_tracks[0], *head_after_sort = &scan_tracks[0];
 	qsort(scan_tracks, num_tracks, sizeof(Track), scan_compare_asc);
-	Track *last = &scan_tracks[num_tracks - 1];
-	rewind_distance = (199 - last->value);
-	Track *head = bsearch(&scan_head, scan_tracks, num_tracks, sizeof(Track), scan_compare_asc);
-	// Head can't be null
-	// Rotate the array so that the head is at the beginning
-	Track *temp = (Track *) malloc(sizeof(Track) * num_tracks);
-	memcpy(temp, scan_tracks, sizeof(Track) * num_tracks);
-	memcpy(scan_tracks, head, sizeof(Track) * (num_tracks - (head - scan_tracks)));
-	memcpy(scan_tracks + (num_tracks - (head - scan_tracks)), temp, sizeof(Track) * (head - scan_tracks));
-
-	// Sort in opposite direction after the partition
-	qsort(scan_tracks + (num_tracks - (head - scan_tracks)), (num_tracks - (head - scan_tracks)), sizeof(Track),
-		  scan_compare_dec);
-	free(temp);
+	head_after_sort = bsearch(&head_before_sort, scan_tracks, num_tracks, sizeof(Track), track_compare);
+	qsort(scan_tracks, head_after_sort - scan_tracks + 1, sizeof(Track), scan_compare_dec);
 
 	out("SCAN\n");
 	out_tracks(scan_tracks, num_tracks);
 
-
-	free(fcfs_tracks); // Initialized in parse_command_line
+	free(fcfs_tracks);    // Initialized in parse_command_line
 	free(sstf_tracks);
 	free(scan_tracks);
 
@@ -100,7 +80,6 @@ int main(int argc, char **argv) {
 }
 
 void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) {
-
 	if (argc == 1) {
 		*num_tracks = get_random_number(50, 100);
 		*tracks = (Track *) malloc(sizeof(Track) * *num_tracks);
@@ -110,12 +89,10 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 		}
 		return;
 	} else if (argc == 2) {
-
 		int size = 1;
 		*tracks = (Track *) malloc(sizeof(Track) * size);
 		*num_tracks = 0;
 		while (true) {
-
 			if (*num_tracks == size) {
 				size = size << 1;
 				*tracks = (Track *) realloc(*tracks, sizeof(Track) * size);
@@ -135,7 +112,6 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 				exit(1);
 			}
 
-
 			(*tracks)[*num_tracks].value = track;
 			(*tracks)[*num_tracks].entry = *num_tracks;
 			*num_tracks += 1;
@@ -153,6 +129,10 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 
 	printf("Usage: ./DSSimul <track1>,<track2>,...,<trackN>\n");
 	exit(1);
+}
+
+int track_compare(const void *a, const void *b) {
+	return ((Track *) a)->value - ((Track *) b)->value;
 }
 
 int sstf_compare(const void *a, const void *b) {
@@ -195,6 +175,7 @@ void out_tracks(Track *tracks, int num_tracks) {
 			distance += abs(tracks[i].value - tracks[i - 1].value);
 		}
 	}
+
 	out("\n");
 	out("Enter At:         \t");
 	for (int i = 0; i < num_tracks; ++i) {
@@ -222,12 +203,8 @@ void out_tracks(Track *tracks, int num_tracks) {
 	out("\n");
 	out("Longest Delay: %d\n", max_delay);
 	out("Average Delay: %03.2f\n", (float) avg_delay / (float) delayed_tracks);
-	if (C_SCAN) {
-		printf("Rewind Distance: %d\n", rewind_distance);
-		out("Average Seek Distance: %03.2f\n", ((float) distance + (float) rewind_distance) / (float) (num_tracks));
-	} else {
-		out("Average Seek Distance: %03.2f\n", (float) distance / (float) (num_tracks));
-	}
+	out("Total Tracks Traversed: %d\n", distance);
+	out("Average Seek Distance: %03.2f\n", (float) distance / (float) (num_tracks));
 
 	out("\n");
 }

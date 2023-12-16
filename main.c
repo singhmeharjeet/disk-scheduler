@@ -17,6 +17,9 @@ typedef struct Track {
 FILE *output;
 int sstf_head = 0;
 
+// Used to ensure that the same track is not used twice
+int used[200] = {0};
+
 void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks);
 
 int sstf_compare(const void *a, const void *b);
@@ -33,6 +36,8 @@ void out_tracks(Track *tracks, int num_tracks);
 void out(const char *format, ...);
 
 int main(int argc, char **argv) {
+	srand((unsigned int) time(NULL));
+
 	output = fopen("out.txt", "w");
 	int num_tracks = 0;
 	Track *fcfs_tracks = NULL;
@@ -82,8 +87,16 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 		*num_tracks = get_random_number(50, 100);
 		*tracks = (Track *) malloc(sizeof(Track) * *num_tracks);
 		for (int i = 0; i < *num_tracks; i++) {
-			(*tracks)[i].value = get_random_number(FIRST_TRACK, LAST_TRACK);
+
+			int track = get_random_number(FIRST_TRACK, LAST_TRACK);
+			while (used[track]) {
+				track = get_random_number(FIRST_TRACK, LAST_TRACK);
+			}
+
+			used[track] = 1;
+			(*tracks)[i].value = track;
 			(*tracks)[i].entry = i;
+
 		}
 		return;
 	} else if (argc == 2) {
@@ -102,7 +115,7 @@ void parse_command_line(int argc, char **argv, Track **tracks, int *num_tracks) 
 			}
 
 			const char *parse_error = NULL;
-			int track = (int) strtonum(token, FIRST_TRACK, LAST_TRACK, &parse_error);
+			int track = (int) atoi(token);
 
 			if (parse_error) {
 				free(*tracks);
@@ -150,7 +163,7 @@ int scan_compare_dec(const void *a, const void *b) {
 }
 
 int get_random_number(int start, int end) {
-	return (int) (arc4random() % (end - start + 1) + start);
+	return (int) (rand() % (end - start + 1) + start);
 }
 
 void out(const char *format, ...) {
@@ -171,11 +184,7 @@ void out_tracks(Track *tracks, int num_tracks) {
 	}
 
 	out("\n");
-	out("Enter At:         \t");
-	for (int i = 0; i < num_tracks; ++i) {
-		out("%03d ", tracks[i].entry);
-	}
-	out("\n");
+
 	out("Delays:           \t");
 	int avg_delay = 0;
 	int max_delay = 0;
